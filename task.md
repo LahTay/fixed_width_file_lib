@@ -5,12 +5,14 @@ structure is described in the table below.
 - get the value of any field
 - change field values
 - add transactions (for transaction definition - read the second page)
+
 Nice to have:
 - A possibility to close some fields for changes
 - Validation of the file structure
 - Production-like error handling mechanism
 - Properly implemented logging according to python logging cookbook
 - Tests
+
 General requirements:
 - It is important how you organize the project.
 - The code must be first - readable, second - reliable, and third - fast. In that exact order of
