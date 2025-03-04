@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+cache_dir = "tests/.pytest_cache"
+pythonpath = [
+  "."
+]
