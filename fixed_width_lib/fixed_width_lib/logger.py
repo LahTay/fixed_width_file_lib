@@ -24,9 +24,9 @@ class Logger:
             return
         self.logger.setLevel(level)
 
-    def log_message(self, message, level):
+    def log_message(self, message, level, exception=False):
         if self._resolve_level(level) is not None:
-            self.logger.log(level, message)
+            self.logger.log(level, message, exc_info=exception)
         else:
             self.logger.error(f"Invalid log level {level} Message was not logged properly: {message}")
 
