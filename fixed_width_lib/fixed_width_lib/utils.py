@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import List
 
 
 @dataclass
 class Transaction:
     transaction_id: int
-    amount: float
+    amount: Decimal
     currency: str
 
 
