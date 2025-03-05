@@ -29,6 +29,7 @@ class Logger:
     of logging of libraries that have logging set up globally.
 
     It is necessary to explicitly set the logging level otherwise default logging library level will be used
+    Not setting it up won't cause errors though.
     """
     def __init__(self, logger_name, handlers: List[logging.Handler], formatting: str):
         self.logger = logging.getLogger(logger_name)
@@ -53,8 +54,9 @@ class Logger:
         self.logger.setLevel(level)
 
     def log_message(self, message, level, exception=False):
-        if self._resolve_level(level) is not None:
-            self.logger.log(level, message, exc_info=exception)
+        resolved = self._resolve_level(level)
+        if resolved is not None:
+            self.logger.log(resolved, message, exc_info=exception)
         else:
             self.logger.error(f"Invalid log level {level} Message was not logged properly: {message}")
 
@@ -95,7 +97,9 @@ class Logger:
         :return: Returns the level itself if the level exists otherwise None
         """
         level_name = logging.getLevelName(level)  # Converts between string and int or returns "Level {name}"
-        if isinstance(level_name, str) and level_name.startswith("Level "):
-            return None
-        return level
+        if isinstance(level_name, str):
+            if level_name.startswith("Level "):
+                return None
+            return level
+        return level_name
 

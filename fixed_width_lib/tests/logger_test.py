@@ -98,6 +98,3 @@ def test_change_handlers_invalid_handler(caplog):
     with caplog.at_level(logging.ERROR):
         logger_instance.change_handlers([invalid_handler], None)
     assert any("Invalid handler type" in record.message for record in caplog.records)
-
-from pathlib import Path
-test = test_logger_good_initialization(Path(__file__).parent / "output")
