@@ -31,19 +31,19 @@ Schematized structure of the file (all lines are placed in the strict order):
 
 ### **Fixed-Width File Structure**
 
-| **Record Type** | **Position (From-To)** | **Data Type** | **Field Name**          | **Extra Info**                                                      |
-|-----------------|----------------------|--------------|-------------------------|---------------------------------------------------------------------|
-| Header          | 1-2                  | String       | Field ID                | Fixed value `"01"`                                                  |
-|                 | 3-30                 | String       | Name                    |                                                                     |
-|                 | 31-60                | String       | Surname                 |                                                                     |
-|                 | 61-90                | String       | Patronymic              |                                                                     |
-|                 | 91-120               | String       | Address                 |                                                                     |
-| Transaction     | 1-2                  | String       | Field ID                | Fixed value `"02"`                                                  |
-|                 | 3-8                  | String       | Counter                 | Format: `000001 - 020000` (incremented automatically)               |
-|                 | 9-20                 | Number       | Amount                  | Format: `000000002000` (last two digits are decimal, leading zeros) |
-|                 | 21-23                | String       | Currency                | Fixed list of possible values                                       |
-|                 | 24-120               | String       | Reserved                | Spaces                                                              |
-| Footer          | 1-2                  | String       | Field ID                | Fixed value `"03"`                                                  |
-|                 | 3-8                  | Number       | Total Counter           | Format: `000001 - 020000` (total transaction count)                 |
-|                 | 9-20                 | Number       | Control Sum             | Format: `000000002000` (sum of all transactions)                    |
-|                 | 21-120               | String       | Reserved                | Spaces                                                              |
+| **Record Type** | **Position (From-To)** | **Data Type** | **Field Name** | **Extra Info**                                                      |
+|-----------------|------------------------|---------------|----------------|---------------------------------------------------------------------|
+| Header          | 1-2                    | String        | Field ID       | Fixed value `"01"`                                                  |
+|                 | 3-30                   | String        | Name           |                                                                     |
+|                 | 31-60                  | String        | Surname        |                                                                     |
+|                 | 61-90                  | String        | Patronymic     |                                                                     |
+|                 | 91-120                 | String        | Address        |                                                                     |
+| Transaction     | 1-2                    | String        | Field ID       | Fixed value `"02"`                                                  |
+|                 | 3-8                    | String        | Counter        | Format: `000001 - 020000` (incremented automatically)               |
+|                 | 9-20                   | Number        | Amount         | Format: `000000002000` (last two digits are decimal, leading zeros) |
+|                 | 21-23                  | String        | Currency       | Fixed list of possible values                                       |
+|                 | 24-120                 | String        | Reserved       | Spaces                                                              |
+| Footer          | 1-2                    | String        | Field ID       | Fixed value `"03"`                                                  |
+|                 | 3-8                    | Number        | Total Counter  | Format: `000001 - 020000` (total transaction count)                 |
+|                 | 9-20                   | Number        | Control Sum    | Format: `000000002000` (sum of all transactions)                    |
+|                 | 21-120                 | String        | Reserved       | Spaces                                                              |

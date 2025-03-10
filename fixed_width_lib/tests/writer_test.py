@@ -3,6 +3,7 @@ import pytest
 from pathlib import Path
 from fixed_width_lib.writer import Writer
 from decimal import Decimal
+from fixed_width_lib.logger import LogHandler
 def test_change_header(test_output_path):
     """
     Verify that change_header updates only the specified header fields.
@@ -14,7 +15,7 @@ def test_change_header(test_output_path):
       - Positions 91-120: Address (30 characters)
     """
     file_path = test_output_path / "writer_change_header.txt"
-    writer = Writer(str(file_path), "w", "writer_logger", [], "%(message)s")
+    writer = Writer(str(file_path), "w", "writer_logger", [LogHandler.STREAM.value()], "%(message)s")
     writer.set_header(name="Alice", surname="Brown", patronymic="C", address="Old Address")
     writer.change_header(address="New Address")
     writer.write()
@@ -42,7 +43,7 @@ def test_change_transaction(test_output_path):
       - Positions 24-120: Reserved (97 spaces)
     """
     file_path = test_output_path / "writer_change_transaction.txt"
-    writer = Writer(str(file_path), "w", "writer_logger", [], "%(message)s")
+    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
     writer.set_header(name="Bob", surname="Smith", patronymic="D", address="123 Street")
     writer.add_transaction(amount=Decimal("1000.00"), currency="EUR")
     writer.add_transaction(amount=Decimal("2000.00"), currency="EUR")
@@ -79,7 +80,7 @@ def test_change_footer(test_output_path):
     In this test, we'll override the control sum.
     """
     file_path = test_output_path / "writer_change_footer.txt"
-    writer = Writer(str(file_path), "w", "writer_logger", [], "%(message)s")
+    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
     writer.set_header(name="Eve", surname="White", patronymic="F", address="789 Avenue")
     writer.add_transaction(amount=Decimal("500.00"), currency="GBP")
     writer.add_transaction(amount=Decimal("1500.00"), currency="GBP")
@@ -104,7 +105,7 @@ def test_update_individual_fields(test_output_path):
     For example, update a header field and then update a transaction field separately.
     """
     file_path = test_output_path / "writer_individual_update.txt"
-    writer = Writer(str(file_path), "w", "writer_logger", [], "%(message)s")
+    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
     # Set initial header and add one transaction.
     writer.set_header(name="Carol", surname="King", patronymic="G", address="Initial Address")
     writer.add_transaction(amount=Decimal("3000.00"), currency="CAD")
@@ -132,7 +133,7 @@ def test_transaction_amount_strict_decimal(test_output_path, bad_amount):
     Test that add_transaction raises a TypeError when the amount is not a decimal.Decimal.
     """
     file_path = test_output_path / "writer_bad_amount.txt"
-    writer = Writer(str(file_path), "w", "writer_logger", [], "%(message)s")
+    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
     # Set a header so that transactions can be added.
     writer.set_header(name="Test", surname="User", patronymic="X", address="Some Address")
 

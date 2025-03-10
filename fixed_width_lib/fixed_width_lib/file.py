@@ -34,6 +34,7 @@ class File:
         if self.file:
             try:
                 self.file.close()
+                self.file = None
             except OSError:
                 self.logger.log_message(f"Failed to close file '{self.filepath}", "ERROR", exception=True)
 

@@ -2,10 +2,11 @@ from fixed_width_lib.file import File
 from typing import List, Optional
 from logging import Handler
 from decimal import Decimal
+from pathlib import Path
 
 
 class Writer(File):
-    def __init__(self, filepath: str, mode: str, logger_name: str, handlers_list: List[Handler], formatting: str):
+    def __init__(self, filepath: (str, Path), mode: str, logger_name: str, handlers_list: List[Handler], formatting: str):
         super().__init__(filepath, mode, logger_name, handlers_list, formatting)
         self.changed_header_values = {}
         self.new_transactions = []
@@ -52,6 +53,11 @@ class Writer(File):
         :return:
         """
         pass
+
+        # To add something to the file you can just go through the file, find the things you want, and add the line you
+        # want to that line after with a seperator so like (old_line + new_line + os.sep)
+        # This wi
+
 
     def change_transaction(self, idx: int, *,
                            amount: Optional[Decimal] = None,
