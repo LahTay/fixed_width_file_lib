@@ -4,7 +4,7 @@ from pathlib import Path
 from fixed_width_lib.writer import Writer
 from decimal import Decimal
 from fixed_width_lib.logger import LogHandler
-def test_change_header(test_output_path):
+def test_change_header(test_output_path, file_stream_logger):
     """
     Verify that change_header updates only the specified header fields.
     The header record is expected to be 120 characters long with:
@@ -15,7 +15,7 @@ def test_change_header(test_output_path):
       - Positions 91-120: Address (30 characters)
     """
     file_path = test_output_path / "writer_change_header.txt"
-    writer = Writer(str(file_path), "w", "writer_logger", [LogHandler.STREAM.value()], "%(message)s")
+    writer = Writer(str(file_path), "w", file_stream_logger)
     writer.set_header(name="Alice", surname="Brown", patronymic="C", address="Old Address")
     writer.change_header(address="New Address")
     writer.write()
@@ -32,7 +32,7 @@ def test_change_header(test_output_path):
     # Verify that address was updated
     assert header[90:120] == "New Address".ljust(30)
 
-def test_change_transaction(test_output_path):
+def test_change_transaction(test_output_path, file_stream_logger):
     """
     Verify that change_transaction updates only the specified fields of a transaction.
     A transaction record (120 characters) has:
@@ -43,7 +43,7 @@ def test_change_transaction(test_output_path):
       - Positions 24-120: Reserved (97 spaces)
     """
     file_path = test_output_path / "writer_change_transaction.txt"
-    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    writer = Writer(str(file_path), "w", file_stream_logger)
     writer.set_header(name="Bob", surname="Smith", patronymic="D", address="123 Street")
     writer.add_transaction(amount=Decimal("1000.00"), currency="EUR")
     writer.add_transaction(amount=Decimal("2000.00"), currency="EUR")
@@ -69,7 +69,7 @@ def test_change_transaction(test_output_path):
     # And reserved part remains spaces.
     assert transaction_line[23:120] == " " * 97
 
-def test_change_footer(test_output_path):
+def test_change_footer(test_output_path, file_stream_logger):
     """
     Verify that change_footer updates only the specified footer fields.
     The footer record (120 characters) should have:
@@ -80,7 +80,7 @@ def test_change_footer(test_output_path):
     In this test, we'll override the control sum.
     """
     file_path = test_output_path / "writer_change_footer.txt"
-    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    writer = Writer(str(file_path), "w", file_stream_logger)
     writer.set_header(name="Eve", surname="White", patronymic="F", address="789 Avenue")
     writer.add_transaction(amount=Decimal("500.00"), currency="GBP")
     writer.add_transaction(amount=Decimal("1500.00"), currency="GBP")
@@ -99,13 +99,13 @@ def test_change_footer(test_output_path):
     # Reserved field should be 100 spaces.
     assert footer[20:120] == " " * 100
 
-def test_update_individual_fields(test_output_path):
+def test_update_individual_fields(test_output_path, file_stream_logger):
     """
     Verify that individual updates can be applied without resetting the entire record.
     For example, update a header field and then update a transaction field separately.
     """
     file_path = test_output_path / "writer_individual_update.txt"
-    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    writer = Writer(str(file_path), "w", file_stream_logger)
     # Set initial header and add one transaction.
     writer.set_header(name="Carol", surname="King", patronymic="G", address="Initial Address")
     writer.add_transaction(amount=Decimal("3000.00"), currency="CAD")
@@ -128,12 +128,12 @@ def test_update_individual_fields(test_output_path):
     assert transaction[20:23] == "AUD"
 
 @pytest.mark.parametrize("bad_amount", [100, 100.0, "100.0", None])
-def test_transaction_amount_strict_decimal(test_output_path, bad_amount):
+def test_transaction_amount_strict_decimal(test_output_path, bad_amount, file_stream_logger):
     """
     Test that add_transaction raises a TypeError when the amount is not a decimal.Decimal.
     """
     file_path = test_output_path / "writer_bad_amount.txt"
-    writer = Writer(str(file_path), "w", "writer_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    writer = Writer(str(file_path), "w", file_stream_logger)
     # Set a header so that transactions can be added.
     writer.set_header(name="Test", surname="User", patronymic="X", address="Some Address")
 

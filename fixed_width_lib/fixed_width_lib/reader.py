@@ -1,15 +1,15 @@
 from fixed_width_lib.file import File
 from typing import List, Optional, Union
-from logging import Handler
+from logger import Logger
 from pathlib import Path
 from decimal import Decimal
-from utils import Transaction, Content
+from fixed_width_lib.utils import Transaction, Content
 
 
 class Reader(File):
 
-    def __init__(self, filepath: (str, Path), mode: str, logger_name: str, handlers_list: List[Handler], formatting: str):
-        super().__init__(filepath, mode, logger_name, handlers_list, formatting)
+    def __init__(self, filepath: (str, Path), mode: str, logger: Logger):
+        super().__init__(filepath, mode, logger)
 
     def read(self):
         """

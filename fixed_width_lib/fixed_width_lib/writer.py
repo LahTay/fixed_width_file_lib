@@ -1,13 +1,13 @@
 from fixed_width_lib.file import File
 from typing import List, Optional
-from logging import Handler
+from logger import Logger
 from decimal import Decimal
 from pathlib import Path
 
 
 class Writer(File):
-    def __init__(self, filepath: (str, Path), mode: str, logger_name: str, handlers_list: List[Handler], formatting: str):
-        super().__init__(filepath, mode, logger_name, handlers_list, formatting)
+    def __init__(self, filepath: (str, Path), mode: str, logger: Logger):
+        super().__init__(filepath, mode, logger)
         self.changed_header_values = {}
         self.new_transactions = []
         self.changed_transactions = {}

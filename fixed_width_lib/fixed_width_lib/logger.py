@@ -45,13 +45,35 @@ class Logger:
 
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
+        self.log_message("Logger properly set", "INFO")
 
     def set_level(self, level: Union[str, int]):
-        if self._resolve_level(level) is None:
+        """
+        Set the level of the logger itself
+        :param level: One of the levels from the logging module as either the string or the int representation
+        :return: None
+        """
+        resolved_level = self._resolve_level(level)
+        if resolved_level is None:
             current_level = logging.getLevelName(self.logger.getEffectiveLevel())
-            self.logger.error(f"Invalid log level {level} Level not changed from {current_level}")
+            self.logger.error(f"Invalid log level {level}. Level not changed from {current_level}")
             return
-        self.logger.setLevel(level)
+        self.logger.setLevel(resolved_level)
+        self.log_message(f"Local logging level set to {logging.getLevelName(resolved_level)}", "INFO")
+
+    def set_global_level(self, level: Union[str, int]):
+        """
+        Set the global level of the logging module (useful if other libraries also use logging)
+        :param level: One of the levels from the logging module as either the string or the int representation
+        :return: None
+        """
+        resolved_level = self._resolve_level(level)
+        if self._resolve_level(level) is None:
+            current_level = logging.getLevelName(logging.getLogger().getEffectiveLevel())
+            self.logger.error(f"Invalid log level {level}. Level not changed from {current_level}")
+            return
+        logging.basicConfig(level=resolved_level)
+        self.log_message(f"Global logging level set to {logging.getLevelName(resolved_level)}", "INFO")
 
     def log_message(self, message, level, exception=False):
         resolved = self._resolve_level(level)

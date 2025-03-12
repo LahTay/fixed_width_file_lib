@@ -5,15 +5,15 @@ from typing import List, Union
 
 
 class File:
-    def __init__(self, filepath: str, mode: str, logger_name: str, handlers_list: List[Handler], formatting: str):
+    def __init__(self, filepath: str, mode: str, logger: Logger):
         self.filepath = Path(filepath)
         self.mode = mode
         self.file = None
-        self.logger = Logger(logger_name, handlers_list, formatting)
+        self.logger = logger
 
     def open(self):
         """
-        Opens the managed file
+        Assigns and opens the managed file
         """
         try:
             self.file = open(self.filepath, self.mode)
@@ -29,7 +29,7 @@ class File:
 
     def close(self):
         """
-        Closes the managed file
+        Closes the managed file and sets the file variable to None (file needs to be open() again)
         """
         if self.file:
             try:
@@ -46,6 +46,16 @@ class File:
             self.filepath.unlink(missing_ok=True)
         except (PermissionError, IsADirectoryError, OSError):
             self.logger.log_message(f"Couldn't delete the file {self.filepath}", "ERROR", exception=True)
+
+    def set_file(self, filepath: str | Path, mode: str = None):
+        """
+        Allows changing the file dynamically. After setting it, it still needs to be open
+        """
+        self.filepath = Path(filepath)
+        if mode:
+            self.mode = mode
+        if self.is_open():
+            self.close()
 
     def set_logger(self, logger_name: str, handlers_list: List[Handler], formatting: str):
         """

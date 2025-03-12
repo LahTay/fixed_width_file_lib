@@ -3,7 +3,7 @@ from pathlib import Path
 from fixed_width_lib.reader import Reader  # Your Reader implementation
 from fixed_width_lib.logger import LogHandler
 
-def test_reader_read_entire_file(example_file: Path):
+def test_reader_read_entire_file(example_file: Path, file_stream_logger):
     """
     Verify that read() parses the entire fixed-width file correctly.
     Expected structure:
@@ -11,7 +11,7 @@ def test_reader_read_entire_file(example_file: Path):
       - transactions: a list of dicts, each with fields: "Field ID", "Counter", "Amount", "Currency"
       - footer: a dict with fields: "Field ID", "Total Counter", "Control Sum"
     """
-    reader = Reader(str(example_file), "r", "reader_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    reader = Reader(str(example_file), "r", file_stream_logger)
     result = reader.read()
 
     # Verify that we got the three main sections.
@@ -51,11 +51,11 @@ def test_reader_read_entire_file(example_file: Path):
     assert footer.get("Control Sum") == "000000003500"
 
 
-def test_reader_get_header_fields(example_file: Path):
+def test_reader_get_header_fields(example_file: Path, file_stream_logger):
     """
     Verify that get_header_fields returns the correct header values for the requested fields.
     """
-    reader = Reader(str(example_file), "r", "reader_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    reader = Reader(str(example_file), "r", file_stream_logger)
     # Request only a subset of header fields.
     header_fields = reader.get_header_fields(["Name", "Surname", "Address"])
     assert header_fields["Name"].strip() == "John"
@@ -65,12 +65,12 @@ def test_reader_get_header_fields(example_file: Path):
     # For example, you might return None or raise an error.
 
 
-def test_reader_get_transaction(example_file: Path):
+def test_reader_get_transaction(example_file: Path, file_stream_logger):
     """
     Verify that get_transaction(idx) returns the correct transaction record.
     Assumes that the first transaction has index 1.
     """
-    reader = Reader(str(example_file), "r", "reader_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    reader = Reader(str(example_file), "r", file_stream_logger)
     transaction1 = reader.get_transaction(1)
     transaction2 = reader.get_transaction(2)
 
@@ -87,11 +87,11 @@ def test_reader_get_transaction(example_file: Path):
     assert transaction2.get("Currency") == "EUR"
 
 
-def test_reader_get_footer_field(example_file: Path):
+def test_reader_get_footer_field(example_file: Path, file_stream_logger):
     """
     Verify that get_footer_field returns the correct footer values for the requested fields.
     """
-    reader = Reader(str(example_file), "r", "reader_test_logger", [LogHandler.STREAM.value()], "%(message)s")
+    reader = Reader(str(example_file), "r", file_stream_logger)
     footer_fields = reader.get_footer_field(["Total Counter", "Control Sum"])
     assert footer_fields["Total Counter"] == "000002"
     assert footer_fields["Control Sum"] == "000000003500"
