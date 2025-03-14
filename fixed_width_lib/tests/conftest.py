@@ -23,7 +23,7 @@ def test_output_path():
 
 @pytest.fixture
 def example_file(test_data_path: Path) -> Path:
-    # Assumes the sample file is located at test_data/example_file
+    # Assumes the sample _file is located at test_data/example_file
     return test_data_path / "example_file"
 
 

@@ -111,7 +111,7 @@ def test_update_individual_fields(test_output_path, file_stream_logger):
     writer.add_transaction(amount=Decimal("3000.00"), currency="CAD")
     writer.write()
 
-    # Now, simulate updating the file by changing the header's surname and the transaction's currency.
+    # Now, simulate updating the _file by changing the header's surname and the transaction's currency.
     writer.change_header(surname="Queen")
     writer.change_transaction(1, currency="AUD")  # Update the first (and only) transaction.
     writer.write()

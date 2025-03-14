@@ -1,86 +1,64 @@
 from fixed_width_lib.logger import Logger
 from logging import Handler
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, IO
 
 
 class File:
-    def __init__(self, filepath: str, mode: str, logger: Logger):
+    def __init__(self, filepath: str, logger: Logger):
         self.filepath = Path(filepath)
-        self.mode = mode
-        self.file = None
+        self.mode = "r+"  # As the _file has to work for both writing and reading this is the only available mode
+        self._file = None
         self.logger = logger
+
+    def get_file(self) -> IO[str]:
+        """Returns the _file handle, ensuring it's open."""
+        return self._file
 
     def open(self):
         """
-        Assigns and opens the managed file
+        Assigns and opens the managed _file
         """
-        try:
-            self.file = open(self.filepath, self.mode)
-        except (FileNotFoundError, PermissionError, OSError):
-            self.logger.log_message(f"Failed to open file '{self.filepath}'", "ERROR", exception=True)
-
-    def is_open(self):
-        """
-        Checking if the file is open
-        :return: Is file open
-        """
-        return self.file is not None and not self.file.closed
+        if self._file is None or self._file.closed:
+            try:
+                self._file = open(self.filepath, self.mode)
+                self.logger.log_message(f"File opened: {self.filepath}", "INFO")
+            except (FileNotFoundError, PermissionError, OSError):
+                self.logger.log_message(f"Failed to open _file '{self.filepath}'", "ERROR", exception=True)
 
     def close(self):
         """
-        Closes the managed file and sets the file variable to None (file needs to be open() again)
+        Closes the managed _file and sets the _file variable to None (_file needs to be open() again)
         """
-        if self.file:
+        if self._file and not self._file.closed:
             try:
-                self.file.close()
-                self.file = None
+                self._file.close()
+                self._file = None
+                self.logger.log_message(f"File closed: {self.filepath}", "INFO")
             except OSError:
-                self.logger.log_message(f"Failed to close file '{self.filepath}", "ERROR", exception=True)
+                self.logger.log_message(f"Failed to close _file '{self.filepath}", "ERROR", exception=True)
 
-    def delete_file(self):
+    def set_file(self, filepath: str | Path):
         """
-        Deletes the managed file
-        """
-        try:
-            self.filepath.unlink(missing_ok=True)
-        except (PermissionError, IsADirectoryError, OSError):
-            self.logger.log_message(f"Couldn't delete the file {self.filepath}", "ERROR", exception=True)
-
-    def set_file(self, filepath: str | Path, mode: str = None):
-        """
-        Allows changing the file dynamically. After setting it, it still needs to be open
+        Allows changing the _file dynamically. After setting it, it still needs to be open
         """
         self.filepath = Path(filepath)
-        if mode:
-            self.mode = mode
-        if self.is_open():
-            self.close()
-
-    def set_logger(self, logger_name: str, handlers_list: List[Handler], formatting: str):
-        """
-        Set a new logger
-        :param logger_name: Name of the created logger, could also be an instance of another logger
-        :param handlers_list: List with instances of valid handlers
-        :param formatting: Formatting as a string
-        :return:
-        """
-        self.logger = Logger(logger_name, handlers_list, formatting)
+        self.close()
 
     def set_logger_level(self, level: Union[int, str]):
         self.logger.set_level(level)
 
-    def __enter__(self):
+    def __enter__(self) -> "File":
         """
-        Opens the file and returns it, not the File class instance itself!
-        :return: Return the instance of the open file
+        Opens the _file and returns it, not the File class instance itself!
+        :return: Return the instance of the open _file
         """
         self.open()
-        return self.file
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """
-        On exit closes the file
+        On exit closes the _file
         """
         self.close()
 

@@ -51,18 +51,18 @@ class CLI:
                 break
             elif cmd == "help":
                 print("Available commands:")
-                print("  setfile <file_path>    - Set the transaction file")
+                print("  setfile <file_path>    - Set the transaction _file")
                 print("  get <header/footer/transactions> [filters] - "
                       "Retrieve a header, footer, or transactions with filters")
                 print("  modify <field> <value> - Modify a field value")
                 print("  add <id> <amount> <currency> - Add a new transaction")
                 print("  lock <field>           - Lock a field from modifications")
-                print("  validate               - Validate file integrity")
+                print("  validate               - Validate _file integrity")
                 print("  exit                   - Quit the CLI")
             elif cmd == "setfile" and len(args) == 1:
                 self.set_file(args[0])
             elif not self.file_set:
-                print("Error: No file set. Use 'setfile <file_path>' first.")
+                print("Error: No _file set. Use 'setfile <file_path>' first.")
             elif cmd == "get":
                 if len(args) < 1:
                     print("Error: No fields specified for retrieval.")

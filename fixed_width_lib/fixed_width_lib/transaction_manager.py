@@ -34,7 +34,7 @@ class TransactionManager:
 
     def get_field(self, *field_names, **filters):
         if not self.reader:
-            return "Error: No file is set. Use set_file() first."
+            return "Error: No _file is set. Use set_file() first."
 
         results = {}
 
@@ -55,7 +55,7 @@ class TransactionManager:
 
     def modify_field(self, field_name: str, new_value: str):
         if not self.reader or not self.writer:
-            return "Error: No file is set. Use set_file() first."
+            return "Error: No _file is set. Use set_file() first."
 
         if field_name in self.locked_fields:
             self.logger.log_message(f"Attempt to modify locked field: {field_name}", "WARNING")
@@ -72,7 +72,7 @@ class TransactionManager:
 
     def add_transaction(self, transaction_id: int, amount: str, currency: str):
         if not self.reader or not self.writer:
-            return "Error: No file is set. Use set_file() first."
+            return "Error: No _file is set. Use set_file() first."
 
         new_transaction = Transaction(
             transaction_id=transaction_id,
@@ -91,7 +91,7 @@ class TransactionManager:
 
     def validate(self):
         if not self.reader:
-            return "Error: No file is set. Use set_file() first."
+            return "Error: No _file is set. Use set_file() first."
 
         header = self.reader.read_header()
         footer = self.reader.read_footer()

@@ -7,59 +7,51 @@ import logging
 def test_file_initialization(test_output_path, file_stream_logger):
     """Test that a File object is properly initialized."""
     file_path = test_output_path / "test_file.txt"
-    f = File(str(file_path), "w", file_stream_logger)
+    f = File(str(file_path), file_stream_logger)
     assert f is not None
     assert f.filepath == file_path
 
 
 def test_open_and_close_file(test_output_path, file_stream_logger):
-    """Test that opening and closing a file works as expected."""
+    """Test that opening and closing a _file works as expected."""
     file_path = test_output_path / "test_open_close.txt"
-    f = File(str(file_path), "w", file_stream_logger)
-    assert f.file is None
+    f = File(str(file_path), file_stream_logger)
     f.open()
 
-    assert f.file is not None
-    assert f.is_open()
+    assert f.get_file() is not None
+    assert not f.get_file().closed
 
     f.close()
-    assert f.file.closed
+    assert f.get_file() is None  # Check directly if file is not assigned anymore
+
+    f.open()
+    assert f.get_file() is not None  # Check if you can open the same file again
+    f.close()
+    assert f.get_file() is None
 
 
 def test_open_nonexistent_file(test_output_path, caplog, file_stream_logger):
     """
-    Test that attempting to open a nonexistent file in read mode logs an error.
-    Since mode "r" on a non-existent file raises an exception, the File.open()
-    method should log an error and leave f.file as None.
+    Test that attempting to open a nonexistent _file in read mode logs an error.
+    Since mode "r" on a non-existent _file raises an exception, the File.open()
+    method should log an error and leave f._file as None.
     """
     file_path = test_output_path / "nonexistent.txt"
-    f = File(str(file_path), "r", file_stream_logger)
+    f = File(str(file_path), file_stream_logger)
     f.set_logger_level("ERROR")
     f.open()
-    assert f.file is None
-    error_logged = any("Failed to open file" in record.message for record in caplog.records)
-    assert error_logged
-
-
-def test_delete_file(test_output_path, file_stream_logger):
-    """Test that delete_file removes an existing file."""
-    file_path = test_output_path / "to_delete.txt"
-    with open(file_path, "w") as temp:
-        temp.write("temporary content")
-    assert file_path.exists()
-    f = File(str(file_path), "r", file_stream_logger)
-    f.delete_file()
-    assert not file_path.exists()
+    assert f.get_file() is None  # Ensure file is not opened
+    assert any("Failed to open _file" in record.message for record in caplog.records)
 
 
 def test_context_manager_usage(test_output_path, file_stream_logger):
     """
     Test using the File class as a context manager.
-    The __enter__ method should open the file and return the file handle.
+    The __enter__ method should open the _file and return the _file handle.
     """
     file_path = test_output_path / "context_file.txt"
-    with File(str(file_path), "w", file_stream_logger) as file_handle:
-        file_handle.write("test phrase")
+    with File(str(file_path), file_stream_logger) as f:
+        f.get_file().write("test phrase")
 
     with open(file_path, "r") as f_read:
         content = f_read.read()
@@ -72,22 +64,21 @@ def test_set_logger_level(test_output_path, caplog, file_stream_logger):
     Log a DEBUG message and verify it appears when the level is set to DEBUG.
     """
     file_path = test_output_path / "test_logger_level.txt"
-    f = File(str(file_path), "w", file_stream_logger)
+    f = File(str(file_path), file_stream_logger)
     f.set_logger_level("DEBUG")
     f.logger.log_message("debug message", logging.DEBUG)
-    debug_logged = any("debug message" in record.message for record in caplog.records)
-    assert debug_logged
+
+    assert any("debug message" in record.message for record in caplog.records)
 
 
-def test_set_logger(test_output_path, caplog, file_stream_logger):
-    """
-    Test that set_logger correctly replaces the existing logger with a new one.
-    """
-    file_path = test_output_path / "test_set_logger.txt"
-    f = File(str(file_path), "w", file_stream_logger)
-    f.set_logger("new_logger", [LogHandler.STREAM.value()], "%(levelname)s: %(message)s")
-    f.set_logger_level("INFO")
-    f.logger.log_message("message from new logger", logging.INFO)
-    message_logged = any("message from new logger" in record.message for record in caplog.records)
-    assert message_logged
+def test_set_file_changes_path(test_output_path, file_stream_logger):
+    """Test that set_file correctly updates the file path."""
+    file_path1 = test_output_path / "file1.txt"
+    file_path2 = test_output_path / "file2.txt"
+
+    f = File(str(file_path1), file_stream_logger)
+    assert f.filepath == file_path1
+
+    f.set_file(str(file_path2))
+    assert f.filepath == file_path2
 

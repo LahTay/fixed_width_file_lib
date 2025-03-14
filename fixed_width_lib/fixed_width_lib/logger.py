@@ -8,14 +8,14 @@ from typing import List, Union
 class LogHandler(Enum):
     """
     Those handlers should be all you'll ever need, but you can always add new ones here if needed
-    Convenience enum, so you don't have to import logging in every file just get the .value and instantiate it
-    Some handlers require a file path as an argument
+    Convenience enum, so you don't have to import logging in every _file just get the .value and instantiate it
+    Some handlers require a _file path as an argument
     """
     STREAM = logging.StreamHandler  # Writes to console
-    FILE = logging.FileHandler  # Standard writes to file
+    FILE = logging.FileHandler  # Standard writes to _file
     NULL = logging.NullHandler  # Not logging anything
-    ROTATING = handlers.RotatingFileHandler  # Logs file and after a certain file size renames it and creates new one
-    TIMED_ROTATING = handlers.TimedRotatingFileHandler  # Changes file after fixed time intervals (daily, weekly etc.)
+    ROTATING = handlers.RotatingFileHandler  # Logs _file and after a certain _file size renames it and creates new one
+    TIMED_ROTATING = handlers.TimedRotatingFileHandler  # Changes _file after fixed time intervals (daily, weekly etc.)
     QUEUE = handlers.QueueHandler  # Sends logs to a queue - useful for multi-threaded apps
     MEMORY = handlers.MemoryHandler  # Stores logs in memory and only writes after a condition is met
     HTTP = handlers.HTTPHandler  # Wends logs to an HTTP server

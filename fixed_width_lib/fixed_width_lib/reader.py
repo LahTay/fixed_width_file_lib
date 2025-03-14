@@ -1,24 +1,23 @@
-from fixed_width_lib.file import File
-from typing import List, Optional, Union
-from logger import Logger
-from pathlib import Path
 from decimal import Decimal
-from fixed_width_lib.utils import Transaction, Content
+import os
+from typing import List, Optional, Union
+
+from fixed_width_lib.file import File
+from fixed_width_lib.logger import Logger
+from fixed_width_lib.utils import Header, Footer, Transaction, Content
+from fixed_width_lib.utils import HeaderFields, FooterFields, TransactionFields, LINESIZE
 
 
-class Reader(File):
+class Reader:
+    def __init__(self, file_handler: File, logger: Logger):
+        self.file_handler = file_handler
+        self.logger = logger
 
-    def __init__(self, filepath: (str, Path), mode: str, logger: Logger):
-        super().__init__(filepath, mode, logger)
-
-    def read(self):
+    def read(self) -> Optional[Content]:
         """
-        Read the entire file and return it
-        :return: Content class containing the file values
+        Read the entire _file and return it
+        :return: Content class containing the _file values
         """
-        if self.file is None:
-            self.open()
-
         header_data = self.read_header()
         if header_data is None:
             self.logger.log_message("Header record not found", "ERROR")
@@ -31,64 +30,67 @@ class Reader(File):
             self.logger.log_message("Footer record not found", "ERROR")
             return
 
-        return Content(
-            name=header_data["name"],
-            surname=header_data["surname"],
-            patronymic=header_data["patronymic"],
-            address=header_data["address"],
-            transactions=transactions,
-            total_counter=footer_data["total_counter"],
-            control_sum=footer_data["control_sum"]
-        )
+        return Content(header=header_data, transactions=transactions, footer=footer_data)
 
-    def read_header(self):
-        header_line = self.file.readline().rstrip("\n")
+    def read_header(self) -> Optional[Header]:
+        file = self.file_handler.get_file()
+        file.seek(0)
+        header_line = file.readline().rstrip("\n")
         if not header_line.startswith("01"):
-            self.close()
             self.logger.log_message("Invalid header record", "ERROR")
             return None
 
-        return {
-            "name": header_line[2:30].strip(),
-            "surname": header_line[30:60].strip(),
-            "patronymic": header_line[60:90].strip(),
-            "address": header_line[90:120].strip()
-        }
+        return Header(
+            name=header_line[HeaderFields.NAME[0]:HeaderFields.NAME[1]].strip(),
+            surname=header_line[HeaderFields.SURNAME[0]:HeaderFields.SURNAME[1]].strip(),
+            patronymic=header_line[HeaderFields.PATRONYMIC[0]:HeaderFields.PATRONYMIC[1]].strip(),
+            address=header_line[HeaderFields.ADDRESS[0]:HeaderFields.ADDRESS[1]].strip(),
+        )
 
-    def read_transactions(self):
+    def read_transactions(self) -> List[Transaction]:
         """
         Read the all transactions and return them
         :return: List containing all transactions in a Transaction class
         """
+        file = self.file_handler.get_file()
+        file.seek(0)
         transactions = []
-        for line in self.file:
+        for line in file:
             line = line.rstrip("\n")
             if line.startswith("03"):
                 break
             if not line.startswith("02"):
                 continue
-            transaction_id = int(line[2:8])
-            amount = Decimal(line[8:20])
-            currency = line[20:23].strip()
+            transaction_id = int(line[TransactionFields.COUNTER[0]:TransactionFields.COUNTER[1]])
+            amount = Decimal(line[TransactionFields.AMOUNT[0]:TransactionFields.AMOUNT[1]]) / 100
+            currency = line[TransactionFields.CURRENCY[0]:TransactionFields.CURRENCY[1]].strip()
             transactions.append(Transaction(transaction_id, amount, currency))
         return transactions
 
-    def read_footer(self):
+    def read_footer(self) -> Optional[Footer]:
         """
         Read the entire footer line and return it
         :return: Dict containing the footer
         """
-        footer_line = None
-        for line in self.file:
-            if line.startswith("03"):
-                footer_line = line.rstrip("\n")
-                break
-        if footer_line is None:
-            return None
-        return {
-            "total_counter": int(footer_line[2:8]),
-            "control_sum": int(footer_line[8:20])
-        }
+        file = self.file_handler.get_file()
+        file.seek(0)
+        first_line = file.readline()
+        os_end = 2 if first_line.endswith("\r\n") else 1
+        line_size = LINESIZE + os_end
+
+        file.seek(0, os.SEEK_END)
+        file.seek(file.tell() - line_size - 1)  # -1 because of end of file char
+
+        footer_line = file.readline().rstrip("\n")
+
+        if not footer_line.startswith("03"):
+            self.logger.log_message("Footer record not found", "ERROR")
+            return
+
+        return Footer(
+            total_counter=int(footer_line[FooterFields.TOTAL_COUNTER[0]:FooterFields.TOTAL_COUNTER[1]]),
+            control_sum=Decimal(footer_line[FooterFields.CONTROL_SUM[0]:FooterFields.CONTROL_SUM[1]]) / 100
+        )
 
     def get_transactions(self, *, counter: Union[int, List[int]] = None,
                          amount: Union[int, str, List[Union[int, str]]] = None,
@@ -107,8 +109,8 @@ class Reader(File):
         :param limit: An optional integer specifying the maximum number of transactions to return.
         :return:
         """
-        if self.file is None:
-            self.open()
+        file = self.file_handler.get_file()
+        file.seek(0)
         results = []
         found_counters = set()
 
@@ -121,17 +123,15 @@ class Reader(File):
         if isinstance(currency, str):
             currency = [currency]
 
-        for line in self.file:
+        for line in file:
             line = line.rstrip("\n")
             if not line.startswith("02"):
                 continue
 
-            transaction_id = int(line[2:8])
-            transaction_amount = Decimal(line[8:20])
-            transaction_currency = line[20:23].strip()
+            transaction_id = int(line[TransactionFields.COUNTER[0]:TransactionFields.COUNTER[1]])
+            transaction_amount = Decimal(line[TransactionFields.AMOUNT[0]:TransactionFields.AMOUNT[1]]) / 100
+            transaction_currency = line[TransactionFields.CURRENCY[0]:TransactionFields.CURRENCY[1]].strip()
 
-            # If the match is None then it's not counted
-            # otherwise if the value is in the match then the transaction is valid
             match_counter = counter is None or transaction_id in counter
             match_amount = amount is None or transaction_amount in amount
             match_currency = currency is None or transaction_currency in currency
@@ -143,5 +143,5 @@ class Reader(File):
                     break
                 if counter and set(counter) == found_counters:
                     break
-            return results
+        return results
 
