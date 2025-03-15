@@ -75,11 +75,11 @@ class Reader:
         file = self.file_handler.get_file()
         file.seek(0)
         first_line = file.readline()
-        os_end = 2 if first_line.endswith("\r\n") else 1
-        line_size = LINESIZE + os_end
+        os_end = file.newlines
+        line_size = LINESIZE + len(os_end)
 
         file.seek(0, os.SEEK_END)
-        file.seek(file.tell() - line_size - 1)  # -1 because of end of file char
+        file.seek(file.tell() - line_size)
 
         footer_line = file.readline().rstrip("\n")
 

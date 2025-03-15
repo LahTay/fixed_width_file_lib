@@ -34,8 +34,6 @@ def test_reader_read_entire_file(example_file, file_stream_logger):
     assert content.footer.control_sum == Decimal("600.00")
 
 
-
-
 def test_reader_read_header(example_file, file_stream_logger):
     """
     Test that `read_header()` correctly parses the header section.
@@ -123,9 +121,7 @@ def test_reader_invalid_header(test_data_path, file_stream_logger, caplog):
 
     assert header is None
     assert any("Invalid header record" in record.message for record in caplog.records)
-# from fixed_width_lib.logger import Logger, LogHandler
-# from pathlib import Path
-# reader_invalid_header(Path("./test_data"), Logger("test", [LogHandler.STREAM.value()], ""), None)
+
 
 def test_reader_invalid_footer(test_data_path, file_stream_logger, caplog):
     """

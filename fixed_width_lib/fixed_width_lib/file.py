@@ -5,14 +5,16 @@ from typing import List, Union, IO
 
 
 class File:
-    def __init__(self, filepath: str, logger: Logger):
+    def __init__(self, filepath: str, logger: Logger, create_if_missing=False):
         self.filepath = Path(filepath)
         self.mode = "r+"  # As the _file has to work for both writing and reading this is the only available mode
+        self.newline = ""  # Has to be set as otherwise each write will insert an endline character
         self._file = None
         self.logger = logger
+        self.create_if_missing = create_if_missing
 
     def get_file(self) -> IO[str]:
-        """Returns the _file handle, ensuring it's open."""
+        """Returns the _file handle."""
         return self._file
 
     def open(self):
@@ -21,7 +23,11 @@ class File:
         """
         if self._file is None or self._file.closed:
             try:
-                self._file = open(self.filepath, self.mode)
+                if self.create_if_missing and not self.filepath.exists():
+                    self.logger.log_message(f"File '{self.filepath}' not found. Creating a new empty file.", "INFO")
+                    self.filepath.touch()
+
+                self._file = open(self.filepath, self.mode, newline=self.newline)
                 self.logger.log_message(f"File opened: {self.filepath}", "INFO")
             except (FileNotFoundError, PermissionError, OSError):
                 self.logger.log_message(f"Failed to open _file '{self.filepath}'", "ERROR", exception=True)

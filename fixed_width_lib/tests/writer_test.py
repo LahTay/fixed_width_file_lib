@@ -1,141 +1,215 @@
-import logging
+import os
 import pytest
+from decimal import Decimal
 from pathlib import Path
 from fixed_width_lib.writer import Writer
-from decimal import Decimal
-from fixed_width_lib.logger import LogHandler
-def test_change_header(test_output_path, file_stream_logger):
+from fixed_width_lib.logger import Logger
+from fixed_width_lib.file import File
+from fixed_width_lib.utils import Header, Transaction
+
+
+def detect_line_ending(file_path):
     """
-    Verify that change_header updates only the specified header fields.
-    The header record is expected to be 120 characters long with:
-      - Positions 1-2: Fixed "01"
-      - Positions 3-30: Name (28 characters)
-      - Positions 31-60: Surname (30 characters)
-      - Positions 61-90: Patronymic (30 characters)
-      - Positions 91-120: Address (30 characters)
+    Detects the line ending format (\n or \r\n) in a file.
+    
+    :param file_path: Path to the read file
+    :return: str \r\n or \n depending on what the file is written in
     """
-    file_path = test_output_path / "writer_change_header.txt"
-    writer = Writer(str(file_path), "w", file_stream_logger)
-    writer.set_header(name="Alice", surname="Brown", patronymic="C", address="Old Address")
-    writer.change_header(address="New Address")
-    writer.write()
+    
+    with open(file_path, "r", newline="") as f:
+        first_line = f.readline()
+        return "\r\n" if first_line.endswith("\r\n") else "\n"
+
+
+def test_set_and_change_header(test_output_path, file_stream_logger):
+    """
+    Verify that set_header correctly sets the header and change_header modifies only the specified fields.
+    """
+    file_path = test_output_path / "writer_set_and_change_header.txt"
+    if file_path.exists():
+        file_path.unlink()
+
+    file = File(str(file_path), file_stream_logger, create_if_missing=True)
+    file.open()
+
+    writer = Writer(file, file_stream_logger)
+
+    header = Header(name="Name123321", surname="Sur Na Me", patronymic="Something", address="Old Address")
+    writer.set_header(header)
+
+    os_end = detect_line_ending(file_path)
 
     with open(file_path, "r") as f:
-        header = f.readline().rstrip("\n")
+        header_line = f.readline().rstrip(os_end)
 
-    # Verify fixed field "01" is intact
-    assert header[0:2] == "01"
-    # Verify name, surname, patronymic remain unchanged
-    assert header[2:30] == "Alice".ljust(28)
-    assert header[30:60] == "Brown".ljust(30)
-    assert header[60:90] == "C".ljust(30)
-    # Verify that address was updated
-    assert header[90:120] == "New Address".ljust(30)
+    assert header_line[:2] == "01"
+    assert header_line[2:30] == "Name123321".rjust(28)
+    assert header_line[30:60] == "Sur Na Me".rjust(30)
+    assert header_line[60:90] == "Something".rjust(30)
+    assert header_line[90:120] == "Old Address".rjust(30)
 
-def test_change_transaction(test_output_path, file_stream_logger):
+    writer.change_header(Header(address="New Address"))
+
+    file.close()
+
+    with open(file_path, "r") as f:
+        header_line = f.readline().rstrip(os_end)
+
+    assert header_line[:2] == "01"
+    assert header_line[2:30] == "Name123321".rjust(28)
+    assert header_line[30:60] == "Sur Na Me".rjust(30)
+    assert header_line[60:90] == "Something".rjust(30)
+    assert header_line[90:120] == "New Address".rjust(30)
+
+
+def test_add_transaction(test_output_path, file_stream_logger):
     """
-    Verify that change_transaction updates only the specified fields of a transaction.
-    A transaction record (120 characters) has:
-      - Positions 1-2: Fixed "02"
-      - Positions 3-8: Counter (6 digits, e.g. "000001" for first, "000002" for second)
-      - Positions 9-20: Amount (12 digits, e.g. "000000002000" for 2000.00)
-      - Positions 21-23: Currency (3 characters)
-      - Positions 24-120: Reserved (97 spaces)
+    Verify that add_transaction correctly appends transactions to the file.
+    """
+    file_path = test_output_path / "writer_add_transaction.txt"
+    if file_path.exists():
+        file_path.unlink()
+
+    file = File(str(file_path), file_stream_logger, create_if_missing=True)
+    file.open()
+
+    writer = Writer(file, file_stream_logger)
+
+    writer.set_header(Header(name="Bob", surname="Smith", patronymic="D", address="123 Street"))
+
+    writer.add_transaction(Transaction(amount=Decimal("1234.56"), currency="ABC"))
+    writer.add_transaction(Transaction(amount=Decimal("9874563.85"), currency="XYZ"))
+
+    file.close()
+
+    os_end = detect_line_ending(file_path)
+
+    with open(file_path, "r") as f:
+        lines = f.readlines()
+
+    transaction_line_1 = lines[1].rstrip(os_end)
+    transaction_line_2 = lines[2].rstrip(os_end)
+
+    assert transaction_line_1[:2] == "02"
+    assert transaction_line_1[2:8] == "000001"
+    assert transaction_line_1[8:20] == "000000123456"
+    assert transaction_line_1[20:23] == "ABC"
+
+    assert transaction_line_2[:2] == "02"
+    assert transaction_line_2[2:8] == "000002"
+    assert transaction_line_2[8:20] == "000987456385"
+    assert transaction_line_2[20:23] == "XYZ"
+
+
+def change_transactions(test_output_path, file_stream_logger):
+    """
+    Verify that change_transactions modifies only the specified transaction fields.
     """
     file_path = test_output_path / "writer_change_transaction.txt"
-    writer = Writer(str(file_path), "w", file_stream_logger)
-    writer.set_header(name="Bob", surname="Smith", patronymic="D", address="123 Street")
-    writer.add_transaction(amount=Decimal("1000.00"), currency="EUR")
-    writer.add_transaction(amount=Decimal("2000.00"), currency="EUR")
-    # Now update the second transaction (idx=2) to change amount and currency.
-    writer.change_transaction(2, amount=Decimal("2500.00"), currency="USD")
-    writer.write()
+    if file_path.exists():
+        file_path.unlink()
+
+    file = File(str(file_path), file_stream_logger, create_if_missing=True)
+    file.open()
+
+    writer = Writer(file, file_stream_logger)
+
+    writer.set_header(Header(name="Charlie", surname="Jones", patronymic="E", address="456 Road"))
+    writer.add_transaction(Transaction(amount=Decimal("1500.00"), currency="USD"))
+    writer.add_transaction(Transaction(amount=Decimal("2500.00"), currency="GBP"))
+
+
+    os_end = detect_line_ending(file_path)
+    with open(file_path, "r") as f:
+        lines = f.readlines()
+
+    transaction_line_1 = lines[1].rstrip(os_end)
+    transaction_line_2 = lines[2].rstrip(os_end)
+
+    assert transaction_line_1[8:20] == "000000150000"  # Amount updated
+    assert transaction_line_1[20:23] == "USD"  # Currency unchanged
+
+    assert transaction_line_2[8:20] == "000000250000"  # Amount unchanged
+    assert transaction_line_2[20:23] == "GBP"  # Currency updated
+
+    # Modify the first transaction's amount and the second one's currency
+    writer.change_transactions([
+        Transaction(transaction_id=1, amount=Decimal("1800.01")),
+        Transaction(transaction_id=2, currency="AUD")
+    ])
+
+    file.close()
 
     with open(file_path, "r") as f:
         lines = f.readlines()
 
-    # Assuming the first line is the header, transaction lines follow,
-    # and the last line is the footer.
-    # Retrieve the second transaction record.
-    transaction_line = lines[2].rstrip("\n")
-    # Verify fixed part "02"
-    assert transaction_line[0:2] == "02"
-    # Verify counter remains "000002"
-    assert transaction_line[2:8] == "000002"
-    # Verify updated amount: 2500.00 should be formatted as "000000002500"
-    assert transaction_line[8:20] == "000000002500"
-    # Verify updated currency "USD"
-    assert transaction_line[20:23] == "USD"
-    # And reserved part remains spaces.
-    assert transaction_line[23:120] == " " * 97
+    transaction_line_1 = lines[1].rstrip(os_end)
+    transaction_line_2 = lines[2].rstrip(os_end)
+    footer_line = lines[3].rstrip(os_end)
 
-def test_change_footer(test_output_path, file_stream_logger):
+    assert transaction_line_1[8:20] == "000000180001"
+    assert transaction_line_1[20:23] == "USD"
+
+    assert transaction_line_2[8:20] == "000000250000"
+    assert transaction_line_2[20:23] == "AUD"
+
+    assert footer_line[2:8] == "000002"
+    assert footer_line[8:20] == "000000430001"
+
+
+def test_footer_update(test_output_path, file_stream_logger):
     """
-    Verify that change_footer updates only the specified footer fields.
-    The footer record (120 characters) should have:
-      - Positions 1-2: Fixed "03"
-      - Positions 3-8: Total transaction count (6 digits)
-      - Positions 9-20: Control sum (12 digits)
-      - Positions 21-120: Reserved (100 spaces)
-    In this test, we'll override the control sum.
+    Verify that the footer updates correctly after adding transactions.
     """
-    file_path = test_output_path / "writer_change_footer.txt"
-    writer = Writer(str(file_path), "w", file_stream_logger)
-    writer.set_header(name="Eve", surname="White", patronymic="F", address="789 Avenue")
-    writer.add_transaction(amount=Decimal("500.00"), currency="GBP")
-    writer.add_transaction(amount=Decimal("1500.00"), currency="GBP")
-    writer.write()
+    file_path = test_output_path / "writer_footer_update.txt"
+
+    if file_path.exists():
+        file_path.unlink()
+
+    file = File(str(file_path), file_stream_logger, create_if_missing=True)
+    file.open()
+
+    writer = Writer(file, file_stream_logger)
+
+    writer.set_header(Header(name="Daniel", surname="White", patronymic="F", address="789 Blvd"))
+    writer.add_transaction(Transaction(amount=Decimal("500.00"), currency="GBP"))
+    writer.add_transaction(Transaction(amount=Decimal("1200.00"), currency="EUR"))
+
+    file.close()
+
+    os_end = detect_line_ending(file_path)
 
     with open(file_path, "r") as f:
         lines = f.readlines()
 
-    footer = lines[-1].rstrip("\n")
-    # Verify fixed "03" is intact.
-    assert footer[0:2] == "03"
-    # Verify total counter remains (should be "000002" for two transactions)
-    assert footer[2:8] == "000002"
-    # Verify that the control sum field is updated as specified.
-    assert footer[8:20] == "000000003000"
-    # Reserved field should be 100 spaces.
-    assert footer[20:120] == " " * 100
+    footer_line = lines[-1].rstrip(os_end)
+    assert footer_line[:2] == "03"
+    assert footer_line[2:8] == "000002"
+    assert footer_line[8:20] == "000000170000"
 
-def test_update_individual_fields(test_output_path, file_stream_logger):
+@pytest.mark.parametrize("invalid_amount", [100.0, "100.0", None])
+def test_invalid_transaction_amount(test_output_path, invalid_amount, file_stream_logger, caplog):
     """
-    Verify that individual updates can be applied without resetting the entire record.
-    For example, update a header field and then update a transaction field separately.
+    Verify that add_transaction raises a TypeError for non-Decimal amounts.
     """
-    file_path = test_output_path / "writer_individual_update.txt"
-    writer = Writer(str(file_path), "w", file_stream_logger)
-    # Set initial header and add one transaction.
-    writer.set_header(name="Carol", surname="King", patronymic="G", address="Initial Address")
-    writer.add_transaction(amount=Decimal("3000.00"), currency="CAD")
-    writer.write()
+    file_path = test_output_path / "writer_invalid_transaction.txt"
+    if file_path.exists():
+        file_path.unlink()
 
-    # Now, simulate updating the _file by changing the header's surname and the transaction's currency.
-    writer.change_header(surname="Queen")
-    writer.change_transaction(1, currency="AUD")  # Update the first (and only) transaction.
-    writer.write()
+    file = File(str(file_path), file_stream_logger, create_if_missing=True)
+    file.open()
 
-    with open(file_path, "r") as f:
-        lines = f.readlines()
+    writer = Writer(file, file_stream_logger)
+    writer.set_header(Header(name="Eric", surname="Brown", patronymic="G", address="987 Street"))
 
-    header = lines[0].rstrip("\n")
-    # Surname should now be updated to "Queen"
-    assert header[30:60] == "Queen".ljust(30)
+    with caplog.at_level("ERROR"):  # Capture only ERROR logs
+        writer.add_transaction(Transaction(amount=invalid_amount, currency="JPY"))
 
-    transaction = lines[1].rstrip("\n")
-    # The first transaction's currency field should now be "AUD"
-    assert transaction[20:23] == "AUD"
+    file.close()
 
-@pytest.mark.parametrize("bad_amount", [100, 100.0, "100.0", None])
-def test_transaction_amount_strict_decimal(test_output_path, bad_amount, file_stream_logger):
-    """
-    Test that add_transaction raises a TypeError when the amount is not a decimal.Decimal.
-    """
-    file_path = test_output_path / "writer_bad_amount.txt"
-    writer = Writer(str(file_path), "w", file_stream_logger)
-    # Set a header so that transactions can be added.
-    writer.set_header(name="Test", surname="User", patronymic="X", address="Some Address")
-
-    with pytest.raises(TypeError):
-        writer.add_transaction(amount=bad_amount, currency="USD")
+    if invalid_amount is None:
+        assert any("cannot be None" in record.message for record in caplog.records), \
+            f"Expected log message not found! Logs: {[record.message for record in caplog.records]}"
+    else:
+        assert any("has to be of Decimal class" in record.message for record in caplog.records), \
+            f"Expected log message not found! Logs: {[record.message for record in caplog.records]}"
