@@ -41,7 +41,8 @@ def test_open_nonexistent_file(test_output_path, caplog, file_stream_logger):
     f.set_logger_level("ERROR")
     f.open()
     assert f.get_file() is None  # Ensure file is not opened
-    assert any("Failed to open _file" in record.message for record in caplog.records)
+    assert any(
+        "Failed to open _file" in record.message for record in caplog.records)
 
 
 def test_context_manager_usage(test_output_path, file_stream_logger):
@@ -81,4 +82,3 @@ def test_set_file_changes_path(test_output_path, file_stream_logger):
 
     f.set_file(str(file_path2))
     assert f.filepath == file_path2
-

@@ -2,6 +2,7 @@ from pathlib import Path
 import pytest
 import sys
 from fixed_width_lib.logger import Logger, LogHandler
+from fixed_width_lib.transaction_manager import TransactionManager
 
 
 @pytest.fixture
@@ -50,5 +51,18 @@ def file_stream_logger():
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
     return Logger("test_logger",
-                  [LogHandler.FILE.value(str(log_file)), LogHandler.STREAM.value()],
+                  [LogHandler.FILE.value(str(log_file)),
+                   LogHandler.STREAM.value()],
                   "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+
+@pytest.fixture
+def transaction_manager(test_output_path, file_stream_logger):
+    """Fixture to create a TransactionManager with a new test file."""
+    file_path = test_output_path / "transaction_manager_test.txt"
+    if file_path.exists():
+        file_path.unlink()
+
+    manager = TransactionManager(file_stream_logger)
+    manager.set_file(file_path)
+    return manager

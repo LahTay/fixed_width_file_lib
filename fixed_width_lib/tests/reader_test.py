@@ -25,9 +25,12 @@ def test_reader_read_entire_file(example_file, file_stream_logger):
     # Verify Transactions
     assert len(content.transactions) == 3
 
-    assert content.transactions[0] == Transaction(transaction_id=1, amount=Decimal("100.00"), currency="USD")
-    assert content.transactions[1] == Transaction(transaction_id=2, amount=Decimal("200.00"), currency="EUR")
-    assert content.transactions[2] == Transaction(transaction_id=3, amount=Decimal("300.00"), currency="GBP")
+    assert content.transactions[0] == Transaction(
+        transaction_id=1, amount=Decimal("100.00"), currency="USD")
+    assert content.transactions[1] == Transaction(
+        transaction_id=2, amount=Decimal("200.00"), currency="EUR")
+    assert content.transactions[2] == Transaction(
+        transaction_id=3, amount=Decimal("300.00"), currency="GBP")
 
     # Verify Footer
     assert content.footer.total_counter == 3
@@ -59,9 +62,18 @@ def test_reader_read_transactions(example_file, file_stream_logger):
 
     assert len(transactions) == 3
 
-    assert transactions[0] == Transaction(transaction_id=1, amount=Decimal("100.00"), currency="USD")
-    assert transactions[1] == Transaction(transaction_id=2, amount=Decimal("200.00"), currency="EUR")
-    assert transactions[2] == Transaction(transaction_id=3, amount=Decimal("300.00"), currency="GBP")
+    assert transactions[0] == Transaction(
+        transaction_id=1,
+        amount=Decimal("100.00"),
+        currency="USD")
+    assert transactions[1] == Transaction(
+        transaction_id=2,
+        amount=Decimal("200.00"),
+        currency="EUR")
+    assert transactions[2] == Transaction(
+        transaction_id=3,
+        amount=Decimal("300.00"),
+        currency="GBP")
 
 
 def test_reader_read_footer(example_file, file_stream_logger):
@@ -87,22 +99,26 @@ def test_reader_get_transactions(example_file, file_stream_logger):
         # Get transaction by counter
         transactions = reader.get_transactions(counter=1)
         assert len(transactions) == 1
-        assert transactions[0] == Transaction(transaction_id=1, amount=Decimal("100.00"), currency="USD")
+        assert transactions[0] == Transaction(
+            transaction_id=1, amount=Decimal("100.00"), currency="USD")
 
         # Get transactions by amount
         transactions = reader.get_transactions(amount="200.00")
         assert len(transactions) == 1
-        assert transactions[0] == Transaction(transaction_id=2, amount=Decimal("200.00"), currency="EUR")
+        assert transactions[0] == Transaction(
+            transaction_id=2, amount=Decimal("200.00"), currency="EUR")
 
         # Get transactions by currency
         transactions = reader.get_transactions(currency="GBP")
         assert len(transactions) == 1
-        assert transactions[0] == Transaction(transaction_id=3, amount=Decimal("300.00"), currency="GBP")
+        assert transactions[0] == Transaction(
+            transaction_id=3, amount=Decimal("300.00"), currency="GBP")
 
         # Get transactions with multiple filters
         transactions = reader.get_transactions(counter=[1, 2], currency="USD")
         assert len(transactions) == 1
-        assert transactions[0] == Transaction(transaction_id=1, amount=Decimal("100.00"), currency="USD")
+        assert transactions[0] == Transaction(
+            transaction_id=1, amount=Decimal("100.00"), currency="USD")
 
         # Get transactions with limit
         transactions = reader.get_transactions(limit=2)
@@ -120,7 +136,8 @@ def test_reader_invalid_header(test_data_path, file_stream_logger, caplog):
             header = reader.read_header()
 
     assert header is None
-    assert any("Invalid header record" in record.message for record in caplog.records)
+    assert any(
+        "Invalid header record" in record.message for record in caplog.records)
 
 
 def test_reader_invalid_footer(test_data_path, file_stream_logger, caplog):
@@ -134,5 +151,5 @@ def test_reader_invalid_footer(test_data_path, file_stream_logger, caplog):
             footer = reader.read_footer()
 
     assert footer is None
-    assert any("Footer record not found" in record.message for record in caplog.records)
-
+    assert any(
+        "Footer record not found" in record.message for record in caplog.records)

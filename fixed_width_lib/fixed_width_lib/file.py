@@ -7,7 +7,9 @@ from typing import List, Union, IO
 class File:
     def __init__(self, filepath: str, logger: Logger, create_if_missing=False):
         self.filepath = Path(filepath)
-        self.mode = "r+"  # As the _file has to work for both writing and reading this is the only available mode
+        # As the _file has to work for both writing and reading this is the
+        # only available mode
+        self.mode = "r+"
         self.newline = ""  # Has to be set as otherwise each write will insert an endline character
         self._file = None
         self.logger = logger
@@ -24,13 +26,19 @@ class File:
         if self._file is None or self._file.closed:
             try:
                 if self.create_if_missing and not self.filepath.exists():
-                    self.logger.log_message(f"File '{self.filepath}' not found. Creating a new empty file.", "INFO")
+                    self.logger.log_message(
+                        f"File '{self.filepath}' not found. Creating a new empty file.", "INFO")
                     self.filepath.touch()
 
-                self._file = open(self.filepath, self.mode, newline=self.newline)
-                self.logger.log_message(f"File opened: {self.filepath}", "INFO")
+                self._file = open(
+                    self.filepath, self.mode, newline=self.newline)
+                self.logger.log_message(
+                    f"File opened: {self.filepath}", "INFO")
             except (FileNotFoundError, PermissionError, OSError):
-                self.logger.log_message(f"Failed to open _file '{self.filepath}'", "ERROR", exception=True)
+                self.logger.log_message(
+                    f"Failed to open _file '{self.filepath}'",
+                    "ERROR",
+                    exception=True)
 
     def close(self):
         """
@@ -40,9 +48,13 @@ class File:
             try:
                 self._file.close()
                 self._file = None
-                self.logger.log_message(f"File closed: {self.filepath}", "INFO")
+                self.logger.log_message(
+                    f"File closed: {self.filepath}", "INFO")
             except OSError:
-                self.logger.log_message(f"Failed to close _file '{self.filepath}", "ERROR", exception=True)
+                self.logger.log_message(
+                    f"Failed to close _file '{self.filepath}",
+                    "ERROR",
+                    exception=True)
 
     def set_file(self, filepath: str | Path):
         """
@@ -67,4 +79,3 @@ class File:
         On exit closes the _file
         """
         self.close()
-

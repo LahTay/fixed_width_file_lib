@@ -4,6 +4,8 @@ from typing import List, Optional
 
 LINESIZE = 120
 MAX_TRANSACTIONS = 20000
+
+
 class HeaderFields:
     IDX = (0, 2)
     NAME = (2, 30)
@@ -73,6 +75,3 @@ class Content:
     header: Header
     transactions: List[Transaction]
     footer: Footer
-
-
-

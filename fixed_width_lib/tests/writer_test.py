@@ -11,11 +11,11 @@ from fixed_width_lib.utils import Header, Transaction
 def detect_line_ending(file_path):
     """
     Detects the line ending format (\n or \r\n) in a file.
-    
+
     :param file_path: Path to the read file
     :return: str \r\n or \n depending on what the file is written in
     """
-    
+
     with open(file_path, "r", newline="") as f:
         first_line = f.readline()
         return "\r\n" if first_line.endswith("\r\n") else "\n"
@@ -34,7 +34,11 @@ def test_set_and_change_header(test_output_path, file_stream_logger):
 
     writer = Writer(file, file_stream_logger)
 
-    header = Header(name="Name123321", surname="Sur Na Me", patronymic="Something", address="Old Address")
+    header = Header(
+        name="Name123321",
+        surname="Sur Na Me",
+        patronymic="Something",
+        address="Old Address")
     writer.set_header(header)
 
     os_end = detect_line_ending(file_path)
@@ -75,10 +79,21 @@ def test_add_transaction(test_output_path, file_stream_logger):
 
     writer = Writer(file, file_stream_logger)
 
-    writer.set_header(Header(name="Bob", surname="Smith", patronymic="D", address="123 Street"))
+    writer.set_header(
+        Header(
+            name="Bob",
+            surname="Smith",
+            patronymic="D",
+            address="123 Street"))
 
-    writer.add_transaction(Transaction(amount=Decimal("1234.56"), currency="ABC"))
-    writer.add_transaction(Transaction(amount=Decimal("9874563.85"), currency="XYZ"))
+    writer.add_transaction(
+        Transaction(
+            amount=Decimal("1234.56"),
+            currency="ABC"))
+    writer.add_transaction(
+        Transaction(
+            amount=Decimal("9874563.85"),
+            currency="XYZ"))
 
     file.close()
 
@@ -114,10 +129,20 @@ def change_transactions(test_output_path, file_stream_logger):
 
     writer = Writer(file, file_stream_logger)
 
-    writer.set_header(Header(name="Charlie", surname="Jones", patronymic="E", address="456 Road"))
-    writer.add_transaction(Transaction(amount=Decimal("1500.00"), currency="USD"))
-    writer.add_transaction(Transaction(amount=Decimal("2500.00"), currency="GBP"))
-
+    writer.set_header(
+        Header(
+            name="Charlie",
+            surname="Jones",
+            patronymic="E",
+            address="456 Road"))
+    writer.add_transaction(
+        Transaction(
+            amount=Decimal("1500.00"),
+            currency="USD"))
+    writer.add_transaction(
+        Transaction(
+            amount=Decimal("2500.00"),
+            currency="GBP"))
 
     os_end = detect_line_ending(file_path)
     with open(file_path, "r") as f:
@@ -171,9 +196,20 @@ def test_footer_update(test_output_path, file_stream_logger):
 
     writer = Writer(file, file_stream_logger)
 
-    writer.set_header(Header(name="Daniel", surname="White", patronymic="F", address="789 Blvd"))
-    writer.add_transaction(Transaction(amount=Decimal("500.00"), currency="GBP"))
-    writer.add_transaction(Transaction(amount=Decimal("1200.00"), currency="EUR"))
+    writer.set_header(
+        Header(
+            name="Daniel",
+            surname="White",
+            patronymic="F",
+            address="789 Blvd"))
+    writer.add_transaction(
+        Transaction(
+            amount=Decimal("500.00"),
+            currency="GBP"))
+    writer.add_transaction(
+        Transaction(
+            amount=Decimal("1200.00"),
+            currency="EUR"))
 
     file.close()
 
@@ -187,8 +223,13 @@ def test_footer_update(test_output_path, file_stream_logger):
     assert footer_line[2:8] == "000002"
     assert footer_line[8:20] == "000000170000"
 
+
 @pytest.mark.parametrize("invalid_amount", [100.0, "100.0", None])
-def test_invalid_transaction_amount(test_output_path, invalid_amount, file_stream_logger, caplog):
+def test_invalid_transaction_amount(
+        test_output_path,
+        invalid_amount,
+        file_stream_logger,
+        caplog):
     """
     Verify that add_transaction raises a TypeError for non-Decimal amounts.
     """
@@ -200,10 +241,18 @@ def test_invalid_transaction_amount(test_output_path, invalid_amount, file_strea
     file.open()
 
     writer = Writer(file, file_stream_logger)
-    writer.set_header(Header(name="Eric", surname="Brown", patronymic="G", address="987 Street"))
+    writer.set_header(
+        Header(
+            name="Eric",
+            surname="Brown",
+            patronymic="G",
+            address="987 Street"))
 
     with caplog.at_level("ERROR"):  # Capture only ERROR logs
-        writer.add_transaction(Transaction(amount=invalid_amount, currency="JPY"))
+        writer.add_transaction(
+            Transaction(
+                amount=invalid_amount,
+                currency="JPY"))
 
     file.close()
 

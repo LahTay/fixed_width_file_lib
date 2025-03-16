@@ -4,7 +4,6 @@ from logging import handlers
 from typing import List, Union
 
 
-
 class LogHandler(Enum):
     """
     Those handlers should be all you'll ever need, but you can always add new ones here if needed
@@ -14,10 +13,14 @@ class LogHandler(Enum):
     STREAM = logging.StreamHandler  # Writes to console
     FILE = logging.FileHandler  # Standard writes to _file
     NULL = logging.NullHandler  # Not logging anything
-    ROTATING = handlers.RotatingFileHandler  # Logs _file and after a certain _file size renames it and creates new one
-    TIMED_ROTATING = handlers.TimedRotatingFileHandler  # Changes _file after fixed time intervals (daily, weekly etc.)
-    QUEUE = handlers.QueueHandler  # Sends logs to a queue - useful for multi-threaded apps
-    MEMORY = handlers.MemoryHandler  # Stores logs in memory and only writes after a condition is met
+    # Logs _file and after a certain _file size renames it and creates new one
+    ROTATING = handlers.RotatingFileHandler
+    # Changes _file after fixed time intervals (daily, weekly etc.)
+    TIMED_ROTATING = handlers.TimedRotatingFileHandler
+    # Sends logs to a queue - useful for multi-threaded apps
+    QUEUE = handlers.QueueHandler
+    # Stores logs in memory and only writes after a condition is met
+    MEMORY = handlers.MemoryHandler
     HTTP = handlers.HTTPHandler  # Wends logs to an HTTP server
     SOCKET = handlers.SocketHandler  # Sends logs over a network using TCP
 
@@ -31,12 +34,18 @@ class Logger:
     It is necessary to explicitly set the logging level otherwise default logging library level will be used
     Not setting it up won't cause errors though.
     """
-    def __init__(self, logger_name, handlers: List[logging.Handler], formatting: str):
+
+    def __init__(self,
+                 logger_name,
+                 handlers: List[logging.Handler],
+                 formatting: str):
         self.logger = logging.getLogger(logger_name)
+        self.logger.propagate = False
         if self.logger.handlers:  # Prevents multiple handlers being added to this logger on creation
             return
         if not handlers:
-            raise ValueError(f"Logger has to have at least one handler on creation")
+            raise ValueError(
+                f"Logger has to have at least one handler on creation")
         formatter = logging.Formatter(formatting)
         for handler in handlers:
             if not isinstance(handler, logging.Handler):
@@ -55,11 +64,15 @@ class Logger:
         """
         resolved_level = self._resolve_level(level)
         if resolved_level is None:
-            current_level = logging.getLevelName(self.logger.getEffectiveLevel())
-            self.logger.error(f"Invalid log level {level}. Level not changed from {current_level}")
+            current_level = logging.getLevelName(
+                self.logger.getEffectiveLevel())
+            self.logger.error(
+                f"Invalid log level {level}. Level not changed from {current_level}")
             return
         self.logger.setLevel(resolved_level)
-        self.log_message(f"Local logging level set to {logging.getLevelName(resolved_level)}", "INFO")
+        self.log_message(
+            f"Local logging level set to {logging.getLevelName(resolved_level)}",
+            "INFO")
 
     def set_global_level(self, level: Union[str, int]):
         """
@@ -69,20 +82,28 @@ class Logger:
         """
         resolved_level = self._resolve_level(level)
         if self._resolve_level(level) is None:
-            current_level = logging.getLevelName(logging.getLogger().getEffectiveLevel())
-            self.logger.error(f"Invalid log level {level}. Level not changed from {current_level}")
+            current_level = logging.getLevelName(
+                logging.getLogger().getEffectiveLevel())
+            self.logger.error(
+                f"Invalid log level {level}. Level not changed from {current_level}")
             return
         logging.basicConfig(level=resolved_level)
-        self.log_message(f"Global logging level set to {logging.getLevelName(resolved_level)}", "INFO")
+        self.log_message(
+            f"Global logging level set to {logging.getLevelName(resolved_level)}",
+            "INFO")
 
     def log_message(self, message, level, exception=False):
         resolved = self._resolve_level(level)
         if resolved is not None:
             self.logger.log(resolved, message, exc_info=exception)
         else:
-            self.logger.error(f"Invalid log level {level} Message was not logged properly: {message}")
+            self.logger.error(
+                f"Invalid log level {level} Message was not logged properly: {message}")
 
-    def change_handlers(self, new_handlers: List[logging.Handler], new_format: Union[str, None]):
+    def change_handlers(self,
+                        new_handlers: List[logging.Handler],
+                        new_format: Union[str,
+                                          None]):
         """
         Replaces all handlers by removing old ones and adding new handlers
 
@@ -91,10 +112,12 @@ class Logger:
         :return:
         """
 
-        # First check if the list is good so handlers aren't incorrectly removed
+        # First check if the list is good so handlers aren't incorrectly
+        # removed
         if not new_handlers:
-            self.logger.error("No new handlers in list. Handlers list cannot be empty. If you wish to not log anything"
-                              "use logging.NullHandler")
+            self.logger.error(
+                "No new handlers in list. Handlers list cannot be empty. If you wish to not log anything"
+                "use logging.NullHandler")
             return
         for handler in new_handlers:
             if not isinstance(handler, logging.Handler):
@@ -118,10 +141,10 @@ class Logger:
         :param level: Either an int or a string showcasing the correct logging level
         :return: Returns the level itself if the level exists otherwise None
         """
-        level_name = logging.getLevelName(level)  # Converts between string and int or returns "Level {name}"
+        level_name = logging.getLevelName(
+            level)  # Converts between string and int or returns "Level {name}"
         if isinstance(level_name, str):
             if level_name.startswith("Level "):
                 return None
             return level
         return level_name
-
