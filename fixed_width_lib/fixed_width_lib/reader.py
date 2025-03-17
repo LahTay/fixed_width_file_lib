@@ -10,14 +10,20 @@ from fixed_width_lib.utils import HeaderFields, FooterFields, TransactionFields,
 
 
 class Reader:
-    def __init__(self, file_handler: File, logger: Logger):
+    def __init__(self, file_handler: File, logger: Logger) -> None:
+        """
+        Initializes the Reader instance.
+
+        :param file_handler: File instance that manages file operations.
+        :param logger: Logger instance for logging events.
+        """
         self.file_handler = file_handler
         self.logger = logger
 
     def read(self) -> Optional[Content]:
         """
-        Read the entire _file and return it
-        :return: Content class containing the _file values
+        Read the entire file and return it
+        :return: Content class object containing the file values
         """
         header_data = self.read_header()
         if header_data is None:
@@ -68,14 +74,14 @@ class Reader:
                 line[TransactionFields.COUNTER[0]:TransactionFields.COUNTER[1]])
             amount = Decimal(
                 line[TransactionFields.AMOUNT[0]:TransactionFields.AMOUNT[1]]) / 100
-            currency = line[TransactionFields.CURRENCY[0]                            :TransactionFields.CURRENCY[1]].strip()
+            currency = line[TransactionFields.CURRENCY[0]:TransactionFields.CURRENCY[1]].strip()
             transactions.append(Transaction(transaction_id, amount, currency))
         return transactions
 
     def read_footer(self) -> Optional[Footer]:
         """
-        Read the entire footer line and return it
-        :return: Dict containing the footer
+        Read the footer line and return it
+        :return: Footer class object or None if it doesn't exist
         """
         file = self.file_handler.get_file()
         file.seek(0)
@@ -102,14 +108,9 @@ class Reader:
 
     def get_transactions(self,
                          *,
-                         counter: Union[int,
-                                        List[int]] = None,
-                         amount: Union[int,
-                                       str,
-                                       List[Union[int,
-                                            str]]] = None,
-                         currency: Union[str,
-                                         List[str]] = None,
+                         counter: Union[int, List[int]] = None,
+                         amount: Union[int, str, List[Union[int, str]]] = None,
+                         currency: Union[str, List[str]] = None,
                          limit=None) -> List[Optional[Transaction]]:
         """
         Returns a list of Transaction objects that match the provided filters and limits the number of results.
@@ -147,7 +148,7 @@ class Reader:
                 line[TransactionFields.COUNTER[0]:TransactionFields.COUNTER[1]])
             transaction_amount = Decimal(
                 line[TransactionFields.AMOUNT[0]:TransactionFields.AMOUNT[1]]) / 100
-            transaction_currency = line[TransactionFields.CURRENCY[0]                                        :TransactionFields.CURRENCY[1]].strip()
+            transaction_currency = line[TransactionFields.CURRENCY[0]:TransactionFields.CURRENCY[1]].strip()
 
             match_counter = counter is None or transaction_id in counter
             match_amount = amount is None or transaction_amount in amount
@@ -166,7 +167,7 @@ class Reader:
                     break
         return results
 
-    def validate_file(self):
+    def validate_file(self) -> str:
         """
         Validates the integrity of the file's header, footer, and transactions.
 
@@ -180,81 +181,91 @@ class Reader:
 
         header = file.readline()
         if not header:
-            self.logger.log_message("File is empty", "ERROR")
-            return "Error: File is empty."
+            log_message = "File is empty"
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
         endline = file.newlines
         if endline is None:
-            self.logger.log_message(
-                "No valid endline character exists", "ERROR")
-            return "No valid endline character exists"
+            log_message = "No valid endline character exists"
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
         header = header.rstrip(endline)
         if not header.startswith("01") or len(header) != 120:
-            self.logger.log_message(
-                "No valid endline character exists", "ERROR")
-            return "No valid endline character exists"
+            log_message = "Invalid header format"
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
 
         for line in file:
-
             if not line.endswith(endline):
+                log_message = "Inconsistent line endings detected"
                 self.logger.log_message(
-                    "No valid endline character exists", "ERROR")
-                return "No valid endline character exists"
+                    log_message, "ERROR")
+                return log_message
             line = line.rstrip(endline)
 
             if line.startswith("03"):
                 break
+
             total_transactions += 1
             if not line.startswith("02"):
-                self.logger.log_message(
-                    f"Incorrect start id of transaction no. {total_transactions}", "ERROR")
-                return f"Incorrect start id of transaction no. {total_transactions}"
+                log_message = f"Incorrect start id of transaction no. {total_transactions}"
+                self.logger.log_message(log_message, "ERROR")
+                return log_message
 
             if len(line) != 120:
-                self.logger.log_message(
-                    f"Incorrect length: {len(line)} of transaction no. {total_transactions}",
-                    "ERROR")
-                return f"Incorrect length: {len(line)} of transaction no. {total_transactions}"
+                log_message = f"Incorrect length: {len(line)} of transaction no. {total_transactions}"
+                self.logger.log_message(log_message, "ERROR")
+                return log_message
 
-            # Validate counter + amount [2:20] are numbers
             if not re.match(r"^\d{18}$", line[2:20]):
-                return f"Error: Transaction no. {total_transactions} contains invalid numeric fields."
+                log_message = f"Transaction no. {total_transactions} contains invalid numeric fields."
+                self.logger.log_message(log_message, "ERROR")
+                return log_message
 
-            # Validate reserved space [23:120] is spaces only
             if not re.match(r"^ *$", line[23:120]):
-                return f"Error: Transaction no. {total_transactions} contains non-space characters in reserved section."
+                log_message = f"Transaction no. {total_transactions} contains non-space characters in reserved section."
+                self.logger.log_message(log_message, "ERROR")
+                return log_message
 
-                # Update validation sums
             control_sum += Decimal(line[8:20]) / 100
+
         footer = line
         if not footer.startswith("03"):
-            self.logger.log_message("Incorrect start id of footer", "ERROR")
-            return "Incorrect start id of footer"
+            log_message = "Incorrect start id of footer"
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
 
         if len(footer) != 120:
-            self.logger.log_message(
-                f"Incorrect length: {len(footer)} of footer", "ERROR")
-            return f"Incorrect length: {len(footer)} of footer"
+            log_message = f"Incorrect length: {len(footer)} of footer"
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
 
-        if not re.match(r"^\d{18}$", line[2:20]):
-            self.logger.log_message(
-                f"Error: Footer {footer} contains invalid numeric fields.", "ERROR")
-            return f"Error: Footer {footer} contains invalid numeric fields."
+        if not re.match(r"^\d{18}$", footer[2:20]):
+            log_message = f"Footer {footer} contains invalid numeric fields."
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
 
         footer_total_counter = int(footer[2:8])
         if footer_total_counter != total_transactions:
-            self.logger.log_message(
-                f"Error: Footer total_counter {footer_total_counter}"
-                f" does not match transaction count {total_transactions}.", "ERROR")
-            return (f"Error: Footer total_counter {footer_total_counter} "
-                    f"does not match transaction count {total_transactions}.")
+            log_message = (
+                f"Footer total_counter {footer_total_counter} "
+                f"does not match transaction count {total_transactions}."
+            )
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
 
         footer_control_sum = Decimal(footer[8:20]) / 100
         if footer_control_sum != control_sum:
-            self.logger.log_message(
-                f"Error: Footer control_sum {footer_control_sum} "
-                f"does not match transaction total {control_sum}.", "ERROR")
-            return f"Error: Footer control_sum {footer_control_sum} does not match transaction total {control_sum}."
+            log_message = (
+                f"Footer control_sum {footer_control_sum} "
+                f"does not match transaction total {control_sum}."
+            )
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
 
         if not re.match(r"^ *$", footer[20:120]):
-            return f"Error: Footer: '{footer}' reserved section contains non-space characters."
+            log_message = f"Footer: '{footer}' reserved section contains non-space characters."
+            self.logger.log_message(log_message, "ERROR")
+            return log_message
+
         return "File validation successful."

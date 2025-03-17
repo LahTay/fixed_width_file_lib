@@ -12,10 +12,13 @@ class CLI:
     def __init__(self, file_path):
         """
         Initializes the CLI, setting up logging and the TransactionManager.
+
+        :param file_path: Optional path to the transaction file to be set initially.
         """
         self.logger = Logger("cli_logger",
                              [LogHandler.FILE.value("./logs/cli.log")],
                              "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        self.logger.logger.propagate = False
         self.logger.set_level("INFO")
         self.logger.set_global_level("CRITICAL")
         self.manager = TransactionManager(self.logger)
@@ -163,7 +166,7 @@ class CLI:
                         compact=True,
                         sort_dicts=False)
             elif cmd == "modify" and len(args) >= 2:
-                section = args[0].lower()  # "header" or "transaction"
+                section = args[0].lower()
 
                 if section == "header":
                     if len(args) != 3:

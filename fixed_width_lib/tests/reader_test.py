@@ -1,5 +1,6 @@
 import pytest
 from decimal import Decimal
+
 from fixed_width_lib.file import File
 from fixed_width_lib.reader import Reader
 from fixed_width_lib.utils import Header, Footer, Transaction, Content
@@ -8,6 +9,9 @@ from fixed_width_lib.utils import Header, Footer, Transaction, Content
 def test_reader_read_entire_file(example_file, file_stream_logger):
     """
     Test that `read()` correctly parses the entire fixed-width file.
+
+    :param example_file: Path to the example fixed-width file.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
     """
     with File(str(example_file), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)
@@ -40,6 +44,9 @@ def test_reader_read_entire_file(example_file, file_stream_logger):
 def test_reader_read_header(example_file, file_stream_logger):
     """
     Test that `read_header()` correctly parses the header section.
+
+    :param example_file: Path to the example fixed-width file.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
     """
     with File(str(example_file), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)
@@ -55,6 +62,9 @@ def test_reader_read_header(example_file, file_stream_logger):
 def test_reader_read_transactions(example_file, file_stream_logger):
     """
     Test that `read_transactions()` correctly reads all transactions.
+
+    :param example_file: Path to the example fixed-width file.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
     """
     with File(str(example_file), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)
@@ -79,6 +89,9 @@ def test_reader_read_transactions(example_file, file_stream_logger):
 def test_reader_read_footer(example_file, file_stream_logger):
     """
     Test that `read_footer()` correctly parses the footer section.
+
+    :param example_file: Path to the example fixed-width file.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
     """
     with File(str(example_file), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)
@@ -92,35 +105,33 @@ def test_reader_read_footer(example_file, file_stream_logger):
 def test_reader_get_transactions(example_file, file_stream_logger):
     """
     Test `get_transactions()` method with different filtering criteria.
+
+    :param example_file: Path to the example fixed-width file.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
     """
     with File(str(example_file), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)
 
-        # Get transaction by counter
         transactions = reader.get_transactions(counter=1)
         assert len(transactions) == 1
         assert transactions[0] == Transaction(
             transaction_id=1, amount=Decimal("100.00"), currency="USD")
 
-        # Get transactions by amount
         transactions = reader.get_transactions(amount="200.00")
         assert len(transactions) == 1
         assert transactions[0] == Transaction(
             transaction_id=2, amount=Decimal("200.00"), currency="EUR")
 
-        # Get transactions by currency
         transactions = reader.get_transactions(currency="GBP")
         assert len(transactions) == 1
         assert transactions[0] == Transaction(
             transaction_id=3, amount=Decimal("300.00"), currency="GBP")
 
-        # Get transactions with multiple filters
         transactions = reader.get_transactions(counter=[1, 2], currency="USD")
         assert len(transactions) == 1
         assert transactions[0] == Transaction(
             transaction_id=1, amount=Decimal("100.00"), currency="USD")
 
-        # Get transactions with limit
         transactions = reader.get_transactions(limit=2)
         assert len(transactions) == 2
 
@@ -128,6 +139,10 @@ def test_reader_get_transactions(example_file, file_stream_logger):
 def test_reader_invalid_header(test_data_path, file_stream_logger, caplog):
     """
     Test handling of an invalid header and ensure error logging works.
+
+    :param test_data_path: Path to the directory containing test files.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
+    :param caplog: Pytest fixture for capturing log messages.
     """
     with File(str(test_data_path / "invalid_header"), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)
@@ -143,6 +158,10 @@ def test_reader_invalid_header(test_data_path, file_stream_logger, caplog):
 def test_reader_invalid_footer(test_data_path, file_stream_logger, caplog):
     """
     Test handling of an invalid footer and ensure error logging works.
+
+    :param test_data_path: Path to the directory containing test files.
+    :param file_stream_logger: Logger instance with both file and stream handlers.
+    :param caplog: Pytest fixture for capturing log messages.
     """
     with File(str(test_data_path / "invalid_footer"), file_stream_logger) as file_handler:
         reader = Reader(file_handler, file_stream_logger)

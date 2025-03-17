@@ -11,11 +11,7 @@ from collections import defaultdict
 
 
 class TransactionManager:
-    """
-    Manages transactions in a fixed-width file, allowing reading, writing, modifying, and validating transactions.
-    """
-
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger) -> None:
         """
         Initializes the TransactionManager with a logger.
 
@@ -28,7 +24,7 @@ class TransactionManager:
         self.locked_fields = set()
         self.locked_transactions = defaultdict(set)
 
-    def set_file(self, file_path: Path):
+    def set_file(self, file_path: Path) -> None:
         """
         Sets the file for reading and writing transactions.
 
@@ -51,7 +47,7 @@ class TransactionManager:
 
         self.logger.log_message(f"File set to {file_path}", "INFO")
 
-    def get_field(self, *field_names, **filters):
+    def get_field(self, *field_names, **filters) -> str | dict:
         """
         Retrieves requested fields from the file.
 
@@ -82,9 +78,8 @@ class TransactionManager:
 
     def modify_field(self,
                      field_name: str,
-                     new_value: Union[str,
-                                      List[Transaction]],
-                     **filters):
+                     new_value: Union[str, List[Transaction]],
+                     **filters) -> str:
         """
         Modifies a specific header field if it's not locked.
 
@@ -119,7 +114,7 @@ class TransactionManager:
                 self.logger.log_message(
                     f"Transactions have to be given in a list object", "ERROR")
                 return f"Error: Transactions have to be given in a list object"
-            for transaction in new_value:  # Check if all transactions are valid before inserting them
+            for transaction in new_value:
                 if not isinstance(transaction, Transaction):
                     self.logger.log_message(
                         f"Transactions have to be given as object of class Transaction", "ERROR")
@@ -131,8 +126,7 @@ class TransactionManager:
                         f" {transaction} skipped", "ERROR")
                     continue
 
-                # Now check if any part of transaction is locked if it is skip
-                # that one
+                # Now check if any part of transaction is locked if it is skip that one
                 if self._is_transaction_locked(transaction):
                     self.logger.log_message(
                         f"Attempt to modify locked transaction: {transaction}", "WARNING")
@@ -152,7 +146,7 @@ class TransactionManager:
 
         return "Invalid field name for modification"
 
-    def add_header(self, header: Header):
+    def add_header(self, header: Header) -> str:
         """
         Adds a header to an empty file. If the file already contains a header, it does nothing.
 
@@ -162,24 +156,22 @@ class TransactionManager:
         if not self.reader or not self.writer:
             return "Error: No file is set. Use set_file() first."
 
-        if self.reader.read_header():  # File is not empty
+        if self.reader.read_header():
             self.logger.log_message(
                 "File already contains a header. Skipping header addition.", "WARNING")
             return "Error: Header already exists in file."
 
-        # If the file is empty, write the new header
         self.writer.set_header(header)
         self.logger.log_message(f"Added header: {header}", "INFO")
         return "Header added successfully."
 
-    def add_transaction(self, transaction: Transaction):
+    def add_transaction(self, transaction: Transaction) -> str:
         """
         Adds a new transaction to the file.
 
-        :param transaction_id: Unique transaction identifier
-        :param amount: Transaction amount as a string (will be converted to Decimal)
-        :param currency: Currency code (e.g., "USD", "EUR")
-        :return: Success message or error message
+        :param transaction: Transaction object containing the amount and currency (both have to be present).
+                            The transaction_id is automatically assigned and should be None.
+        :return:  Success or error message
         """
         if not self.reader or not self.writer:
             return "Error: No file is set. Use set_file() first."
@@ -202,16 +194,21 @@ class TransactionManager:
                 f"Currency has to be given and be of length 3", "ERROR")
             return "Error: Invalid amount format"
 
-        self.writer.add_transaction(transaction)
-        self.logger.log_message(f"Added transaction: {transaction}", "INFO")
-        return f"Added transaction: {transaction}"
+        result = self.writer.add_transaction(transaction)
+        if result:
+            self.logger.log_message(f"Added transaction: {transaction}", "INFO")
+            return f"Added transaction: {transaction}"
+        else:
+            self.logger.log_message(f"Something went wrong, check the logs", "ERROR")
+            return f"Something went wrong, check the logs"
 
     def lock_field(self, field_name: str, filter_value=None):
         """
         Locks a header field or transactions based on criteria.
 
         :param field_name: Field to lock ('name', 'surname', 'patronymic', 'address', 'amount', 'currency', 'counter')
-        :param filter_value: Value to lock transactions by (e.g., counter=10, amount=Decimal("100.00"), currency="USD")
+        :param filter_value: Value to lock transactions by
+                             (example: counter=10, amount=Decimal("100.00"), currency="USD")
         :return: Success message
         """
         if field_name in HeaderFields.FIELD_SIZES.keys():
@@ -230,12 +227,13 @@ class TransactionManager:
 
         return "Invalid field name for locking"
 
-    def unlock_field(self, field_name: str, filter_value=None):
+    def unlock_field(self, field_name: str, filter_value=None) -> str:
         """
         Unlocks a previously locked header field or transactions.
 
         :param field_name: Field to unlock ('name', 'surname', 'patronymic', 'address', 'amount', 'currency', 'counter')
-        :param filter_value: Value to unlock transactions by (e.g., counter=10, amount=Decimal("100.00"), currency="USD")
+        :param filter_value: Value to unlock transactions by
+                             (example: counter=10, amount=Decimal("100.00"), currency="USD")
         :return: Success message
         """
         if field_name in HeaderFields.FIELD_SIZES.keys():
@@ -258,7 +256,7 @@ class TransactionManager:
 
         return "Invalid field name for unlocking"
 
-    def validate(self):
+    def validate(self) -> str:
         """
         Validates the integrity of the file using the Reader's validation function.
 
@@ -293,11 +291,13 @@ class TransactionManager:
             return True
 
         if transaction.amount is not None:
-            if None in self.locked_transactions["amount"] or transaction.amount in self.locked_transactions["amount"]:
+            if (None in self.locked_transactions["amount"] or
+                    transaction.amount in self.locked_transactions["amount"]):
                 return True
 
         if transaction.currency is not None:
-            if None in self.locked_transactions["currency"] or transaction.currency in self.locked_transactions["currency"]:
+            if (None in self.locked_transactions["currency"] or
+                    transaction.currency in self.locked_transactions["currency"]):
                 return True
 
         return False

@@ -23,7 +23,10 @@ def detect_line_ending(file_path):
 
 def test_set_and_change_header(test_output_path, file_stream_logger):
     """
-    Verify that set_header correctly sets the header and change_header modifies only the specified fields.
+    Verify that `set_header()` correctly sets the header and `change_header()` modifies only the specified fields.
+
+    :param test_output_path: Path to the test output directory.
+    :param file_stream_logger: Logger instance for logging test events.
     """
     file_path = test_output_path / "writer_set_and_change_header.txt"
     if file_path.exists():
@@ -68,7 +71,10 @@ def test_set_and_change_header(test_output_path, file_stream_logger):
 
 def test_add_transaction(test_output_path, file_stream_logger):
     """
-    Verify that add_transaction correctly appends transactions to the file.
+    Verify that `add_transaction()` correctly appends transactions to the file.
+
+    :param test_output_path: Path to the test output directory.
+    :param file_stream_logger: Logger instance for logging test events.
     """
     file_path = test_output_path / "writer_add_transaction.txt"
     if file_path.exists():
@@ -118,7 +124,10 @@ def test_add_transaction(test_output_path, file_stream_logger):
 
 def change_transactions(test_output_path, file_stream_logger):
     """
-    Verify that change_transactions modifies only the specified transaction fields.
+    Verify that `change_transactions()` modifies only the specified transaction fields.
+
+    :param test_output_path: Path to the test output directory.
+    :param file_stream_logger: Logger instance for logging test events.
     """
     file_path = test_output_path / "writer_change_transaction.txt"
     if file_path.exists():
@@ -151,13 +160,11 @@ def change_transactions(test_output_path, file_stream_logger):
     transaction_line_1 = lines[1].rstrip(os_end)
     transaction_line_2 = lines[2].rstrip(os_end)
 
-    assert transaction_line_1[8:20] == "000000150000"  # Amount updated
-    assert transaction_line_1[20:23] == "USD"  # Currency unchanged
+    assert transaction_line_1[8:20] == "000000150000"
+    assert transaction_line_1[20:23] == "USD"
+    assert transaction_line_2[8:20] == "000000250000"
+    assert transaction_line_2[20:23] == "GBP"  
 
-    assert transaction_line_2[8:20] == "000000250000"  # Amount unchanged
-    assert transaction_line_2[20:23] == "GBP"  # Currency updated
-
-    # Modify the first transaction's amount and the second one's currency
     writer.change_transactions([
         Transaction(transaction_id=1, amount=Decimal("1800.01")),
         Transaction(transaction_id=2, currency="AUD")
@@ -185,6 +192,9 @@ def change_transactions(test_output_path, file_stream_logger):
 def test_footer_update(test_output_path, file_stream_logger):
     """
     Verify that the footer updates correctly after adding transactions.
+
+    :param test_output_path: Path to the test output directory.
+    :param file_stream_logger: Logger instance for logging test events.
     """
     file_path = test_output_path / "writer_footer_update.txt"
 
@@ -231,7 +241,12 @@ def test_invalid_transaction_amount(
         file_stream_logger,
         caplog):
     """
-    Verify that add_transaction raises a TypeError for non-Decimal amounts.
+    Verify that `add_transaction()` logs an error when an invalid transaction amount is provided.
+
+    :param test_output_path: Path to the test output directory.
+    :param invalid_amount: The invalid amount value being tested.
+    :param file_stream_logger: Logger instance for logging test events.
+    :param caplog: Pytest logging capture fixture.
     """
     file_path = test_output_path / "writer_invalid_transaction.txt"
     if file_path.exists():
@@ -248,7 +263,7 @@ def test_invalid_transaction_amount(
             patronymic="G",
             address="987 Street"))
 
-    with caplog.at_level("ERROR"):  # Capture only ERROR logs
+    with caplog.at_level("ERROR"):
         writer.add_transaction(
             Transaction(
                 amount=invalid_amount,
